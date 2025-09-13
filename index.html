@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motorcycle Maintenance Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏍️ 2001 Suzuki Intruder Volusia 800</h1>
+            <p>Maintenance Tracker</p>
+        </header>
+
+        <div class="current-mileage">
+            <label for="currentMileage">Current Mileage:</label>
+            <input type="number" id="currentMileage" placeholder="Enter current mileage">
+            <button onclick="updateMileage()">Update</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="openTab(event, 'dashboard')">Dashboard</button>
+            <button class="tab-button" onclick="openTab(event, 'maintenance-log')">Maintenance Log</button>
+            <button class="tab-button" onclick="openTab(event, 'add-work')">Add Work</button>
+        </div>
+
+        <div id="dashboard" class="tab-content active">
+            <h2>Maintenance Status</h2>
+            <div id="maintenanceStatus">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <div id="maintenance-log" class="tab-content">
+            <h2>Work History</h2>
+            <div id="workHistory">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <div id="add-work" class="tab-content">
+            <h2>Add Work Done</h2>
+            <form id="workForm">
+                <div class="form-group">
+                    <label for="workDate">Date:</label>
+                    <input type="date" id="workDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="workMileage">Mileage:</label>
+                    <input type="number" id="workMileage" required>
+                </div>
+                <div class="form-group">
+                    <label for="workType">Type:</label>
+                    <select id="workType" required>
+                        <option value="">Select type</option>
+                        <option value="oil-change">Oil Change</option>
+                        <option value="spark-plugs">Spark Plugs</option>
+                        <option value="air-filter">Air Filter</option>
+                        <option value="valve-adjustment">Valve Adjustment</option>
+                        <option value="brake-fluid">Brake Fluid</option>
+                        <option value="coolant">Coolant</option>
+                        <option value="final-drive">Final Drive Oil</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="workDescription">Description:</label>
+                    <textarea id="workDescription" rows="3" required></textarea>
+                </div>
+                <button type="submit">Add Work</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
