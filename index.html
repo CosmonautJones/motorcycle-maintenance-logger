@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motorcycle Maintenance Tracker</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
 </head>
 <body>
     <div class="container">
@@ -23,6 +24,7 @@
             <button class="tab-button active" onclick="openTab(event, 'dashboard')">Dashboard</button>
             <button class="tab-button" onclick="openTab(event, 'maintenance-log')">Maintenance Log</button>
             <button class="tab-button" onclick="openTab(event, 'add-work')">Add Work</button>
+            <button class="tab-button" onclick="openTab(event, 'settings')">Settings</button>
         </div>
 
         <div id="dashboard" class="tab-content active">
@@ -34,6 +36,9 @@
 
         <div id="maintenance-log" class="tab-content">
             <h2>Work History</h2>
+            <div class="work-history-controls">
+                <button onclick="exportData()" class="export-btn">Export Data</button>
+            </div>
             <div id="workHistory">
                 <!-- Will be populated by JavaScript -->
             </div>
@@ -69,6 +74,95 @@
                     <textarea id="workDescription" rows="3" required></textarea>
                 </div>
                 <button type="submit">Add Work</button>
+            </form>
+        </div>
+
+        <div id="settings" class="tab-content">
+            <h2>Settings & Maintenance Schedule</h2>
+            <div class="settings-section">
+                <h3>Maintenance Items</h3>
+                <div id="maintenanceSettings">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                <button onclick="addMaintenanceItem()" class="add-item-btn">Add New Item</button>
+            </div>
+            <div class="settings-section">
+                <h3>Data Management</h3>
+                <button onclick="exportData()" class="export-btn">Export All Data</button>
+                <button onclick="importData()" class="import-btn">Import Data</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(event)">
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Work Modal -->
+    <div id="editWorkModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Edit Work Entry</h2>
+            <form id="editWorkForm">
+                <div class="form-group">
+                    <label for="editWorkDate">Date:</label>
+                    <input type="date" id="editWorkDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="editWorkMileage">Mileage:</label>
+                    <input type="number" id="editWorkMileage" required>
+                </div>
+                <div class="form-group">
+                    <label for="editWorkType">Type:</label>
+                    <select id="editWorkType" required>
+                        <option value="">Select type</option>
+                        <option value="oil-change">Oil Change</option>
+                        <option value="spark-plugs">Spark Plugs</option>
+                        <option value="air-filter">Air Filter</option>
+                        <option value="valve-adjustment">Valve Adjustment</option>
+                        <option value="brake-fluid">Brake Fluid</option>
+                        <option value="coolant">Coolant</option>
+                        <option value="final-drive">Final Drive Oil</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editWorkDescription">Description:</label>
+                    <textarea id="editWorkDescription" rows="3" required></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit">Update Work</button>
+                    <button type="button" onclick="deleteWork()" class="delete-btn">Delete</button>
+                    <button type="button" onclick="closeEditModal()" class="cancel-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Maintenance Item Modal -->
+    <div id="editMaintenanceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeMaintenanceModal()">&times;</span>
+            <h2>Edit Maintenance Item</h2>
+            <form id="editMaintenanceForm">
+                <div class="form-group">
+                    <label for="editMaintenanceName">Name:</label>
+                    <input type="text" id="editMaintenanceName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editMaintenanceDescription">Description:</label>
+                    <textarea id="editMaintenanceDescription" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editMaintenanceIntervalMiles">Interval (Miles):</label>
+                    <input type="number" id="editMaintenanceIntervalMiles" placeholder="Leave empty for time-based only">
+                </div>
+                <div class="form-group">
+                    <label for="editMaintenanceIntervalMonths">Interval (Months):</label>
+                    <input type="number" id="editMaintenanceIntervalMonths" placeholder="Leave empty for mileage-based only">
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit">Update Item</button>
+                    <button type="button" onclick="deleteMaintenanceItem()" class="delete-btn">Delete</button>
+                    <button type="button" onclick="closeMaintenanceModal()" class="cancel-btn">Cancel</button>
+                </div>
             </form>
         </div>
     </div>
