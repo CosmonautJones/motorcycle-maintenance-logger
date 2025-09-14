@@ -387,8 +387,8 @@ class MotorcycleTracker {
                         <p><strong>Interval:</strong> ${item.intervalMiles ? item.intervalMiles + ' miles' : ''}${item.intervalMiles && item.intervalMonths ? ' or ' : ''}${item.intervalMonths ? item.intervalMonths + ' months' : ''}</p>
                     </div>
                     <div class="maintenance-setting-actions">
-                        <button onclick="editMaintenanceItem(${item.id})" class="edit-btn">Edit</button>
-                        ${item.isCustom ? `<button onclick="deleteMaintenanceItemConfirm(${item.id})" class="delete-btn">Delete</button>` : ''}
+                        <button onclick="editMaintenanceItem('${item.id}')" class="edit-btn">Edit</button>
+                        ${item.isCustom ? `<button onclick="deleteMaintenanceItemConfirm('${item.id}')" class="delete-btn">Delete</button>` : ''}
                     </div>
                 </div>
             `;
@@ -564,15 +564,24 @@ async function updateMileage() {
 
 // Global functions for HTML onclick events
 async function editWork(id) {
-    const work = tracker.workHistory.find(w => w.id === id);
-    if (!work) return;
+    try {
+        const work = tracker.workHistory.find(w => w.id === id);
+        if (!work) {
+            console.error('Work entry not found:', id);
+            alert('Work entry not found');
+            return;
+        }
 
-    tracker.currentWorkEdit = id;
-    document.getElementById('editWorkDate').value = work.date;
-    document.getElementById('editWorkMileage').value = work.mileage;
-    document.getElementById('editWorkType').value = work.type;
-    document.getElementById('editWorkDescription').value = work.description;
-    document.getElementById('editWorkModal').style.display = 'block';
+        tracker.currentWorkEdit = id;
+        document.getElementById('editWorkDate').value = work.date;
+        document.getElementById('editWorkMileage').value = work.mileage;
+        document.getElementById('editWorkType').value = work.type;
+        document.getElementById('editWorkDescription').value = work.description;
+        document.getElementById('editWorkModal').style.display = 'block';
+    } catch (error) {
+        console.error('Failed to edit work entry:', error);
+        alert('Failed to open work entry editor');
+    }
 }
 
 async function deleteWorkEntry(id) {
@@ -591,15 +600,26 @@ function closeEditModal() {
 }
 
 async function editMaintenanceItem(id) {
-    const item = tracker.maintenanceSchedule.find(i => i.id === id);
-    if (!item) return;
+    try {
+        const item = tracker.maintenanceSchedule.find(i =>
+            String(i.id) === String(id) || i.id === id
+        );
+        if (!item) {
+            console.error('Maintenance item not found:', id);
+            alert('Maintenance item not found');
+            return;
+        }
 
-    tracker.currentMaintenanceEdit = id;
-    document.getElementById('editMaintenanceName').value = item.name;
-    document.getElementById('editMaintenanceDescription').value = item.description;
-    document.getElementById('editMaintenanceIntervalMiles').value = item.intervalMiles || '';
-    document.getElementById('editMaintenanceIntervalMonths').value = item.intervalMonths || '';
-    document.getElementById('editMaintenanceModal').style.display = 'block';
+        tracker.currentMaintenanceEdit = id;
+        document.getElementById('editMaintenanceName').value = item.name;
+        document.getElementById('editMaintenanceDescription').value = item.description;
+        document.getElementById('editMaintenanceIntervalMiles').value = item.intervalMiles || '';
+        document.getElementById('editMaintenanceIntervalMonths').value = item.intervalMonths || '';
+        document.getElementById('editMaintenanceModal').style.display = 'block';
+    } catch (error) {
+        console.error('Failed to edit maintenance item:', error);
+        alert('Failed to open maintenance item editor');
+    }
 }
 
 async function deleteMaintenanceItem() {
