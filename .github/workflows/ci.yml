@@ -1,0 +1,275 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  # Lint and Code Quality
+  lint:
+    runs-on: ubuntu-latest
+    name: Code Quality Check
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run ESLint
+      run: npm run lint
+
+    - name: Check for security vulnerabilities
+      run: npm audit --audit-level moderate
+
+  # Unit and Integration Tests
+  test:
+    runs-on: ubuntu-latest
+    name: Unit & Integration Tests
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run unit tests
+      run: npm run test:unit
+
+    - name: Run integration tests
+      run: npm run test:integration
+
+    - name: Generate test coverage
+      run: npm run test:coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+
+  # End-to-End Tests
+  e2e:
+    runs-on: ubuntu-latest
+    name: End-to-End Tests
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+
+    - name: Run Playwright tests
+      run: npm run test:e2e
+
+    - name: Upload Playwright Report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: playwright-report
+        path: test-results/playwright-report/
+        retention-days: 30
+
+  # Cross-browser Testing
+  cross-browser:
+    runs-on: ubuntu-latest
+    name: Cross-Browser Testing
+    needs: [lint, test]
+
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+
+    - name: Run tests on ${{ matrix.browser }}
+      run: npx playwright test --project=${{ matrix.browser }}
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.browser }}
+        path: test-results/
+        retention-days: 30
+
+  # Accessibility Testing
+  accessibility:
+    runs-on: ubuntu-latest
+    name: Accessibility Testing
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright and axe
+      run: |
+        npx playwright install --with-deps
+        npm install @axe-core/playwright
+
+    - name: Run accessibility tests
+      run: npx playwright test --grep="accessibility"
+
+    - name: Upload accessibility report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: accessibility-report
+        path: test-results/accessibility/
+        retention-days: 30
+
+  # Security Scanning
+  security:
+    runs-on: ubuntu-latest
+    name: Security Scan
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: npm audit --audit-level moderate
+
+    - name: Run Snyk security scan
+      uses: snyk/actions/node@master
+      continue-on-error: true
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
+
+  # Performance Testing
+  performance:
+    runs-on: ubuntu-latest
+    name: Performance Testing
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Lighthouse CI
+      run: npm install -g @lhci/cli@0.12.x
+
+    - name: Run Lighthouse CI
+      run: |
+        npm run dev &
+        sleep 10
+        lhci autorun --upload.target=temporary-public-storage
+      env:
+        LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+  # Deployment (on main branch only)
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    needs: [lint, test, e2e, cross-browser, accessibility, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./
+        exclude_assets: 'node_modules,tests,.github'
+
+  # Notification
+  notify:
+    runs-on: ubuntu-latest
+    name: Notify Results
+    needs: [lint, test, e2e, cross-browser, accessibility, security, performance]
+    if: always()
+
+    steps:
+    - name: Notify on success
+      if: ${{ needs.test.result == 'success' && needs.e2e.result == 'success' }}
+      run: echo "✅ All tests passed successfully!"
+
+    - name: Notify on failure
+      if: ${{ needs.test.result == 'failure' || needs.e2e.result == 'failure' }}
+      run: |
+        echo "❌ Tests failed!"
+        exit 1

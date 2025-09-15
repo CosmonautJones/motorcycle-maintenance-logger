@@ -1,3 +1,279 @@
+// Enhanced Theme Management System with System Preference Detection
+class ThemeManager {
+    constructor() {
+        this.themes = {
+            light: {
+                name: 'Light Mode',
+                properties: {
+                    '--bg-primary': '#f5f5f5',
+                    '--bg-surface': '#ffffff',
+                    '--bg-surface-secondary': '#f8f9fa',
+                    '--bg-header': 'linear-gradient(135deg, #2c3e50, #3498db)',
+                    '--bg-accent': 'linear-gradient(135deg, #3498db, #2980b9)',
+                    '--bg-success': 'linear-gradient(135deg, #27ae60, #219a52)',
+                    '--bg-warning': 'linear-gradient(135deg, #f39c12, #e67e22)',
+                    '--bg-danger': 'linear-gradient(135deg, #e74c3c, #c0392b)',
+                    '--text-primary': '#333333',
+                    '--text-secondary': '#666666',
+                    '--text-muted': '#999999',
+                    '--text-inverse': '#ffffff',
+                    '--border-primary': '#dddddd',
+                    '--border-secondary': '#ecf0f1',
+                    '--shadow-light': 'rgba(0, 0, 0, 0.1)',
+                    '--shadow-medium': 'rgba(0, 0, 0, 0.15)',
+                    '--shadow-strong': 'rgba(0, 0, 0, 0.3)',
+                    '--transition-fast': '0.15s ease',
+                    '--transition-normal': '0.3s ease',
+                    '--transition-slow': '0.5s ease'
+                }
+            },
+            dark: {
+                name: 'Dark Mode',
+                properties: {
+                    '--bg-primary': 'linear-gradient(135deg, #1a1a1a, #2d2d2d)',
+                    '--bg-surface': 'linear-gradient(145deg, #2a2a2a, #1e1e1e)',
+                    '--bg-surface-secondary': 'linear-gradient(145deg, #333333, #252525)',
+                    '--bg-header': 'linear-gradient(135deg, #1e3a5f, #2c5aa0)',
+                    '--bg-accent': 'linear-gradient(135deg, #4a90e2, #357abd)',
+                    '--bg-success': 'linear-gradient(135deg, #2ecc71, #27ae60)',
+                    '--bg-warning': 'linear-gradient(135deg, #f1c40f, #f39c12)',
+                    '--bg-danger': 'linear-gradient(135deg, #e74c3c, #c0392b)',
+                    '--text-primary': '#ffffff',
+                    '--text-secondary': '#b0b0b0',
+                    '--text-muted': '#777777',
+                    '--text-inverse': '#333333',
+                    '--border-primary': '#404040',
+                    '--border-secondary': '#2a2a2a',
+                    '--shadow-light': 'rgba(0, 0, 0, 0.3)',
+                    '--shadow-medium': 'rgba(0, 0, 0, 0.5)',
+                    '--shadow-strong': 'rgba(0, 0, 0, 0.7)',
+                    '--transition-fast': '0.15s ease',
+                    '--transition-normal': '0.3s ease',
+                    '--transition-slow': '0.5s ease'
+                }
+            }
+        };
+
+        this.themePreference = this.loadThemePreference();
+        this.systemMediaQuery = this.safeMatchMedia('(prefers-color-scheme: dark)');
+        this.currentTheme = this.determineTheme();
+        this.initialize();
+    }
+
+    safeMatchMedia(query) {
+        // Fallback for browsers that don't support matchMedia
+        if (typeof window.matchMedia !== 'function') {
+            return {
+                matches: false,
+                addEventListener: () => {},
+                removeEventListener: () => {}
+            };
+        }
+        return window.matchMedia(query);
+    }
+
+    initialize() {
+        this.applyTheme(this.currentTheme);
+        this.setupSystemThemeListener();
+
+        // Delay DOM-dependent operations until DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.initializeDOMElements();
+            });
+        } else {
+            this.initializeDOMElements();
+        }
+    }
+
+    initializeDOMElements() {
+        this.addTransitionClasses();
+        this.setupThemeControls();
+    }
+
+    loadThemePreference() {
+        return localStorage.getItem('motorcycle-tracker-theme-preference') || 'system';
+    }
+
+    saveThemePreference(preference) {
+        localStorage.setItem('motorcycle-tracker-theme-preference', preference);
+        this.themePreference = preference;
+    }
+
+    determineTheme() {
+        if (this.themePreference === 'system') {
+            return this.systemMediaQuery.matches ? 'dark' : 'light';
+        }
+        return this.themePreference === 'dark' ? 'dark' : 'light';
+    }
+
+    setupSystemThemeListener() {
+        // Listen for system theme changes
+        this.systemMediaQuery.addEventListener('change', (e) => {
+            if (this.themePreference === 'system') {
+                const newTheme = e.matches ? 'dark' : 'light';
+                this.applyTheme(newTheme);
+                this.updateThemeControls();
+            }
+        });
+    }
+
+    setupThemeControls() {
+        // Setup theme toggle button
+        const themeToggle = document.getElementById('themeToggle');
+        const themePreferenceSelect = document.getElementById('themePreference');
+
+        if (themeToggle) {
+            // Set initial ARIA state
+            themeToggle.setAttribute('aria-checked', this.currentTheme === 'dark' ? 'true' : 'false');
+
+            // Update label
+            const label = themeToggle.querySelector('.theme-label');
+            if (label) {
+                label.textContent = this.currentTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
+            }
+
+            // Add keyboard support
+            themeToggle.addEventListener('click', () => {
+                this.toggleTheme();
+                this.updateThemeControls();
+            });
+
+            // Enhanced keyboard navigation
+            themeToggle.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.toggleTheme();
+                    this.updateThemeControls();
+                }
+            });
+        }
+
+        if (themePreferenceSelect) {
+            themePreferenceSelect.value = this.themePreference;
+
+            themePreferenceSelect.addEventListener('change', (e) => {
+                this.saveThemePreference(e.target.value);
+                const newTheme = this.determineTheme();
+                this.applyTheme(newTheme);
+                this.updateThemeControls();
+            });
+        }
+    }
+
+    updateThemeControls() {
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            const isDark = this.currentTheme === 'dark';
+            themeToggle.setAttribute('aria-checked', isDark ? 'true' : 'false');
+
+            const label = themeToggle.querySelector('.theme-label');
+            if (label) {
+                label.textContent = isDark ? 'Dark Mode' : 'Light Mode';
+            }
+
+            // Announce theme change to screen readers
+            this.announceThemeChange(isDark ? 'Dark mode activated' : 'Light mode activated');
+        }
+    }
+
+    announceThemeChange(message) {
+        // Create a temporary ARIA live region for announcements
+        const announcement = document.createElement('div');
+        announcement.setAttribute('role', 'status');
+        announcement.setAttribute('aria-live', 'polite');
+        announcement.setAttribute('aria-atomic', 'true');
+        announcement.className = 'sr-only';
+        announcement.style.position = 'absolute';
+        announcement.style.left = '-10000px';
+        announcement.style.width = '1px';
+        announcement.style.height = '1px';
+        announcement.style.overflow = 'hidden';
+        announcement.textContent = message;
+
+        document.body.appendChild(announcement);
+
+        // Remove after announcement
+        setTimeout(() => {
+            document.body.removeChild(announcement);
+        }, 1000);
+    }
+
+    applyTheme(themeName) {
+        if (!this.themes[themeName]) {
+            console.warn(`Theme "${themeName}" not found, falling back to light theme`);
+            themeName = 'light';
+        }
+
+        const theme = this.themes[themeName];
+        const root = document.documentElement;
+
+        // Apply all theme properties
+        Object.entries(theme.properties).forEach(([property, value]) => {
+            root.style.setProperty(property, value);
+        });
+
+        // Update body class for theme-specific styling
+        document.body.className = document.body.className.replace(/theme-\w+/g, '');
+        document.body.classList.add(`theme-${themeName}`);
+
+        this.currentTheme = themeName;
+
+        // Dispatch theme change event
+        window.dispatchEvent(new CustomEvent('themeChanged', {
+            detail: { theme: themeName, properties: theme.properties }
+        }));
+    }
+
+    switchTheme(themeName) {
+        if (themeName === this.currentTheme) return;
+
+        // Add transition class for smooth switching
+        document.body.classList.add('theme-transitioning');
+
+        setTimeout(() => {
+            this.applyTheme(themeName);
+
+            // Remove transition class after animation
+            setTimeout(() => {
+                document.body.classList.remove('theme-transitioning');
+            }, 300);
+        }, 50);
+    }
+
+    toggleTheme() {
+        const nextTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+        // When manually toggling, save the explicit preference
+        this.saveThemePreference(nextTheme);
+        this.switchTheme(nextTheme);
+    }
+
+    addTransitionClasses() {
+        // Add CSS for smooth transitions
+        const style = document.createElement('style');
+        style.textContent = `
+            .theme-transitioning * {
+                transition: background-color var(--transition-normal),
+                           color var(--transition-normal),
+                           border-color var(--transition-normal),
+                           box-shadow var(--transition-normal) !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    getCurrentTheme() {
+        return this.currentTheme;
+    }
+
+    getThemeList() {
+        return Object.keys(this.themes).map(key => ({
+            key,
+            name: this.themes[key].name
+        }));
+    }
+}
+
 // Database setup
 const db = new Dexie('MotorcycleTrackerDB');
 db.version(1).stores({
@@ -11,6 +287,7 @@ class MotorcycleTracker {
         this.db = db;
         this.currentWorkEdit = null;
         this.currentMaintenanceEdit = null;
+        this.themeManager = new ThemeManager();
         this.defaultMaintenanceSchedule = [
             {
                 id: 'oil-change',
@@ -145,26 +422,268 @@ class MotorcycleTracker {
     }
 
     setupEventListeners() {
-        document.getElementById('workForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.addWork();
-        });
+        // Form submissions
+        const workForm = document.getElementById('workForm');
+        if (workForm) {
+            workForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.addWork();
+            });
+        }
 
-        document.getElementById('editWorkForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.updateWork();
-        });
+        const editWorkForm = document.getElementById('editWorkForm');
+        if (editWorkForm) {
+            editWorkForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.updateWork();
+            });
+        }
 
-        document.getElementById('editMaintenanceForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.updateMaintenanceItem();
-        });
+        const editMaintenanceForm = document.getElementById('editMaintenanceForm');
+        if (editMaintenanceForm) {
+            editMaintenanceForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.updateMaintenanceItem();
+            });
+        }
 
-        document.getElementById('currentMileage').addEventListener('input', (e) => {
-            if (e.target.value) {
-                document.querySelector('.current-mileage button').style.display = 'block';
+        // Mileage input
+        const currentMileageInput = document.getElementById('currentMileage');
+        if (currentMileageInput) {
+            currentMileageInput.addEventListener('input', (e) => {
+                const updateBtn = document.getElementById('updateMileageBtn');
+                if (updateBtn) {
+                    updateBtn.style.display = e.target.value ? 'block' : 'none';
+                }
+            });
+        }
+
+        // Update mileage button
+        const updateMileageBtn = document.getElementById('updateMileageBtn');
+        if (updateMileageBtn) {
+            updateMileageBtn.addEventListener('click', () => {
+                this.updateMileage();
+            });
+        }
+
+        // Tab navigation using event delegation
+        const tabContainer = document.querySelector('.tabs');
+        if (tabContainer) {
+            tabContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('tab-button')) {
+                    const tabName = e.target.getAttribute('data-tab');
+                    if (tabName) {
+                        this.openTab(e, tabName);
+                    }
+                }
+            });
+        }
+
+        // File import
+        const importFile = document.getElementById('importFile');
+        if (importFile) {
+            importFile.addEventListener('change', (e) => {
+                this.handleFileImport(e);
+            });
+        }
+
+        // Global click handler for data-action buttons
+        document.addEventListener('click', (e) => {
+            const action = e.target.getAttribute('data-action');
+            if (action) {
+                this.handleAction(action, e);
             }
         });
+    }
+
+    handleAction(action, event) {
+        try {
+            const target = event.target;
+            const workId = target.getAttribute('data-work-id');
+            const itemId = target.getAttribute('data-item-id');
+
+            switch (action) {
+                case 'export':
+                    this.exportData();
+                    break;
+                case 'import':
+                    this.importData();
+                    break;
+                case 'add-maintenance':
+                    this.addMaintenanceItem();
+                    break;
+                case 'close-edit-modal':
+                    this.closeEditModal();
+                    break;
+                case 'close-maintenance-modal':
+                    this.closeMaintenanceModal();
+                    break;
+                case 'delete-work':
+                    this.deleteWork();
+                    break;
+                case 'delete-maintenance':
+                    this.deleteMaintenanceItem();
+                    break;
+                case 'edit-work':
+                    if (workId) this.editWork(parseInt(workId));
+                    break;
+                case 'delete-work-entry':
+                    if (workId) this.deleteWorkEntry(parseInt(workId));
+                    break;
+                case 'edit-maintenance-item':
+                    if (itemId) this.editMaintenanceItem(itemId);
+                    break;
+                case 'delete-maintenance-item':
+                    if (itemId) this.deleteMaintenanceItemConfirm(itemId);
+                    break;
+                default:
+                    console.warn('Unknown action:', action);
+            }
+        } catch (error) {
+            console.error('Error handling action:', action, error);
+        }
+    }
+
+    openTab(event, tabName) {
+        try {
+            // Hide all tab contents
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let content of tabContents) {
+                content.classList.remove('active');
+            }
+
+            // Remove active class from all tab buttons
+            const tabButtons = document.getElementsByClassName('tab-button');
+            for (let button of tabButtons) {
+                button.classList.remove('active');
+            }
+
+            // Show selected tab content
+            const selectedTab = document.getElementById(tabName);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+
+            // Add active class to clicked button
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+        } catch (error) {
+            console.error('Error opening tab:', tabName, error);
+        }
+    }
+
+    importData() {
+        const importFile = document.getElementById('importFile');
+        if (importFile) {
+            importFile.click();
+        }
+    }
+
+    editWork(id) {
+        try {
+            const work = this.workHistory.find(w => w.id === id);
+            if (!work) {
+                console.error('Work entry not found:', id);
+                alert('Work entry not found');
+                return;
+            }
+
+            this.currentWorkEdit = id;
+            document.getElementById('editWorkDate').value = work.date;
+            document.getElementById('editWorkMileage').value = work.mileage;
+            document.getElementById('editWorkType').value = work.type;
+            document.getElementById('editWorkDescription').value = work.description;
+            document.getElementById('editWorkModal').style.display = 'block';
+        } catch (error) {
+            console.error('Failed to edit work entry:', error);
+            alert('Failed to open work entry editor');
+        }
+    }
+
+    editMaintenanceItem(id) {
+        try {
+            const item = this.maintenanceSchedule.find(i =>
+                String(i.id) === String(id) || i.id === id
+            );
+            if (!item) {
+                console.error('Maintenance item not found:', id);
+                alert('Maintenance item not found');
+                return;
+            }
+
+            this.currentMaintenanceEdit = id;
+            document.getElementById('editMaintenanceName').value = item.name;
+            document.getElementById('editMaintenanceDescription').value = item.description;
+            document.getElementById('editMaintenanceIntervalMiles').value = item.intervalMiles || '';
+            document.getElementById('editMaintenanceIntervalMonths').value = item.intervalMonths || '';
+            document.getElementById('editMaintenanceModal').style.display = 'block';
+        } catch (error) {
+            console.error('Failed to edit maintenance item:', error);
+            alert('Failed to open maintenance item editor');
+        }
+    }
+
+    deleteMaintenanceItemConfirm(id) {
+        if (!confirm('Are you sure you want to delete this maintenance item?')) return;
+
+        this.deleteMaintenanceItemById(id);
+    }
+
+    async deleteMaintenanceItemById(id) {
+        try {
+            await this.db.maintenanceItems.delete(id);
+            this.maintenanceSchedule = await this.loadMaintenanceItems();
+            this.renderMaintenanceSettings();
+            this.renderMaintenanceStatus();
+        } catch (error) {
+            console.error('Failed to delete maintenance item:', error);
+            alert('Failed to delete maintenance item');
+        }
+    }
+
+    handleFileImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const text = e.target.result;
+                const data = JSON.parse(text);
+
+                if (confirm('This will replace all current data. Are you sure?')) {
+                    // Clear existing data
+                    await this.db.workHistory.clear();
+                    await this.db.maintenanceItems.clear();
+                    await this.db.settings.clear();
+
+                    // Import new data
+                    if (data.currentMileage) {
+                        await this.db.settings.put({ key: 'currentMileage', value: data.currentMileage });
+                    }
+
+                    if (data.workHistory) {
+                        for (const work of data.workHistory) {
+                            await this.db.workHistory.add(work);
+                        }
+                    }
+
+                    if (data.maintenanceSchedule) {
+                        for (const item of data.maintenanceSchedule) {
+                            await this.db.maintenanceItems.add(item);
+                        }
+                    }
+
+                    // Reload the app
+                    location.reload();
+                }
+            } catch (error) {
+                console.error('Failed to import data:', error);
+                alert('Failed to import data. Please check the file format.');
+            }
+        };
+        reader.readAsText(file);
     }
 
     async updateMileage() {
@@ -319,8 +838,8 @@ class MotorcycleTracker {
                     <div class="work-header">
                         <h4>${typeName}</h4>
                         <div class="work-actions">
-                            <button onclick="editWork(${work.id})" class="edit-btn">Edit</button>
-                            <button onclick="deleteWorkEntry(${work.id})" class="delete-btn">Delete</button>
+                            <button class="edit-btn" data-action="edit-work" data-work-id="${work.id}">Edit</button>
+                            <button class="delete-btn" data-action="delete-work-entry" data-work-id="${work.id}">Delete</button>
                         </div>
                     </div>
                     <div class="work-meta">
@@ -373,12 +892,28 @@ class MotorcycleTracker {
     renderMaintenanceSettings() {
         const container = document.getElementById('maintenanceSettings');
 
+        // Add theme toggle section first
+        const themeToggleHtml = `
+            <div class="theme-toggle-section">
+                <h4>Theme Settings</h4>
+                <p class="theme-description">Choose between light and dark mode for the best viewing experience</p>
+                <div class="theme-toggle-wrapper">
+                    <span class="theme-label">Light</span>
+                    <label class="theme-toggle">
+                        <input type="checkbox" id="themeToggle" ${this.themeManager.getCurrentTheme() === 'dark' ? 'checked' : ''} onchange="toggleTheme()">
+                        <span class="theme-slider"></span>
+                    </label>
+                    <span class="theme-label">Dark</span>
+                </div>
+            </div>
+        `;
+
         if (this.maintenanceSchedule.length === 0) {
-            container.innerHTML = '<div class="empty-state">No maintenance items configured.</div>';
+            container.innerHTML = themeToggleHtml + '<div class="empty-state">No maintenance items configured.</div>';
             return;
         }
 
-        container.innerHTML = this.maintenanceSchedule.map(item => {
+        const maintenanceItemsHtml = this.maintenanceSchedule.map(item => {
             return `
                 <div class="maintenance-setting-item">
                     <div class="maintenance-setting-info">
@@ -387,12 +922,14 @@ class MotorcycleTracker {
                         <p><strong>Interval:</strong> ${item.intervalMiles ? item.intervalMiles + ' miles' : ''}${item.intervalMiles && item.intervalMonths ? ' or ' : ''}${item.intervalMonths ? item.intervalMonths + ' months' : ''}</p>
                     </div>
                     <div class="maintenance-setting-actions">
-                        <button onclick="editMaintenanceItem('${item.id}')" class="edit-btn">Edit</button>
-                        ${item.isCustom ? `<button onclick="deleteMaintenanceItemConfirm('${item.id}')" class="delete-btn">Delete</button>` : ''}
+                        <button class="edit-btn" data-action="edit-maintenance-item" data-item-id="${item.id}">Edit</button>
+                        ${item.isCustom ? `<button class="delete-btn" data-action="delete-maintenance-item" data-item-id="${item.id}">Delete</button>` : ''}
                     </div>
                 </div>
             `;
         }).join('');
+
+        container.innerHTML = themeToggleHtml + maintenanceItemsHtml;
     }
 
     async updateWork() {
@@ -542,148 +1079,8 @@ class MotorcycleTracker {
     }
 }
 
-function openTab(evt, tabName) {
-    const tabContents = document.getElementsByClassName('tab-content');
-    const tabButtons = document.getElementsByClassName('tab-button');
-
-    for (let content of tabContents) {
-        content.classList.remove('active');
-    }
-
-    for (let button of tabButtons) {
-        button.classList.remove('active');
-    }
-
-    document.getElementById(tabName).classList.add('active');
-    evt.currentTarget.classList.add('active');
-}
-
-async function updateMileage() {
-    await tracker.updateMileage();
-}
-
-// Global functions for HTML onclick events
-async function editWork(id) {
-    try {
-        const work = tracker.workHistory.find(w => w.id === id);
-        if (!work) {
-            console.error('Work entry not found:', id);
-            alert('Work entry not found');
-            return;
-        }
-
-        tracker.currentWorkEdit = id;
-        document.getElementById('editWorkDate').value = work.date;
-        document.getElementById('editWorkMileage').value = work.mileage;
-        document.getElementById('editWorkType').value = work.type;
-        document.getElementById('editWorkDescription').value = work.description;
-        document.getElementById('editWorkModal').style.display = 'block';
-    } catch (error) {
-        console.error('Failed to edit work entry:', error);
-        alert('Failed to open work entry editor');
-    }
-}
-
-async function deleteWorkEntry(id) {
-    await tracker.deleteWorkEntry(id);
-}
-
-async function deleteWork() {
-    if (tracker.currentWorkEdit) {
-        await tracker.deleteWorkEntry(tracker.currentWorkEdit);
-        tracker.closeEditModal();
-    }
-}
-
-function closeEditModal() {
-    tracker.closeEditModal();
-}
-
-async function editMaintenanceItem(id) {
-    try {
-        const item = tracker.maintenanceSchedule.find(i =>
-            String(i.id) === String(id) || i.id === id
-        );
-        if (!item) {
-            console.error('Maintenance item not found:', id);
-            alert('Maintenance item not found');
-            return;
-        }
-
-        tracker.currentMaintenanceEdit = id;
-        document.getElementById('editMaintenanceName').value = item.name;
-        document.getElementById('editMaintenanceDescription').value = item.description;
-        document.getElementById('editMaintenanceIntervalMiles').value = item.intervalMiles || '';
-        document.getElementById('editMaintenanceIntervalMonths').value = item.intervalMonths || '';
-        document.getElementById('editMaintenanceModal').style.display = 'block';
-    } catch (error) {
-        console.error('Failed to edit maintenance item:', error);
-        alert('Failed to open maintenance item editor');
-    }
-}
-
-async function deleteMaintenanceItem() {
-    if (tracker.currentMaintenanceEdit) {
-        await tracker.deleteMaintenanceItemConfirm(tracker.currentMaintenanceEdit);
-        tracker.closeMaintenanceModal();
-    }
-}
-
-function closeMaintenanceModal() {
-    tracker.closeMaintenanceModal();
-}
-
-async function addMaintenanceItem() {
-    await tracker.addMaintenanceItem();
-}
-
-async function exportData() {
-    await tracker.exportData();
-}
-
-function importData() {
-    document.getElementById('importFile').click();
-}
-
-async function handleFileImport(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    try {
-        const text = await file.text();
-        const data = JSON.parse(text);
-
-        if (confirm('This will replace all current data. Are you sure?')) {
-            // Clear existing data
-            await tracker.db.workHistory.clear();
-            await tracker.db.maintenanceItems.clear();
-            await tracker.db.settings.clear();
-
-            // Import new data
-            if (data.currentMileage) {
-                await tracker.db.settings.put({ key: 'currentMileage', value: data.currentMileage });
-            }
-
-            if (data.workHistory) {
-                for (const work of data.workHistory) {
-                    await tracker.db.workHistory.add(work);
-                }
-            }
-
-            if (data.maintenanceSchedule) {
-                for (const item of data.maintenanceSchedule) {
-                    await tracker.db.maintenanceItems.add(item);
-                }
-            }
-
-            // Reload the app
-            location.reload();
-        }
-    } catch (error) {
-        console.error('Failed to import data:', error);
-        alert('Failed to import data. Please check the file format.');
-    }
-}
+// Legacy support for any remaining global function calls
+// These should not be needed after the event handler refactoring
 
 document.addEventListener('DOMContentLoaded', function() {
     window.tracker = new MotorcycleTracker();

@@ -3,9 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Web-based motorcycle maintenance tracker for 2001 Suzuki Intruder Volusia 800">
     <title>Motorcycle Maintenance Tracker</title>
+
+    <!-- Security Headers via meta tags -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <!-- Preconnect to Google Fonts for better performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Load Google Fonts with display=swap for better performance -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://unpkg.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data:;
+        connect-src 'self';
+        frame-ancestors 'none';
+        base-uri 'self';
+        form-action 'self';
+    ">
+
+    <!-- Main stylesheet -->
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
+
+    <!-- Dexie.js with Subresource Integrity (SRI) for security -->
+    <script
+        src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"
+        integrity="sha384-dPjGJ3rBpGktXk5Oc6fSuIzpWQb1Uk+yIt23iySD3broHItJTZOIKJVzRDCvW9kx"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
 </head>
 <body>
     <div class="container">
@@ -17,14 +51,14 @@
         <div class="current-mileage">
             <label for="currentMileage">Current Mileage:</label>
             <input type="number" id="currentMileage" placeholder="Enter current mileage">
-            <button onclick="updateMileage()">Update</button>
+            <button id="updateMileageBtn">Update</button>
         </div>
 
         <div class="tabs">
-            <button class="tab-button active" onclick="openTab(event, 'dashboard')">Dashboard</button>
-            <button class="tab-button" onclick="openTab(event, 'maintenance-log')">Maintenance Log</button>
-            <button class="tab-button" onclick="openTab(event, 'add-work')">Add Work</button>
-            <button class="tab-button" onclick="openTab(event, 'settings')">Settings</button>
+            <button class="tab-button active" data-tab="dashboard">Dashboard</button>
+            <button class="tab-button" data-tab="maintenance-log">Maintenance Log</button>
+            <button class="tab-button" data-tab="add-work">Add Work</button>
+            <button class="tab-button" data-tab="settings">Settings</button>
         </div>
 
         <div id="dashboard" class="tab-content active">
@@ -37,7 +71,7 @@
         <div id="maintenance-log" class="tab-content">
             <h2>Work History</h2>
             <div class="work-history-controls">
-                <button onclick="exportData()" class="export-btn">Export Data</button>
+                <button class="export-btn" data-action="export">Export Data</button>
             </div>
             <div id="workHistory">
                 <!-- Will be populated by JavaScript -->
@@ -80,17 +114,42 @@
         <div id="settings" class="tab-content">
             <h2>Settings & Maintenance Schedule</h2>
             <div class="settings-section">
+                <h3>Appearance</h3>
+                <div class="theme-toggle-container">
+                    <button
+                        id="themeToggle"
+                        class="theme-toggle-btn"
+                        type="button"
+                        role="switch"
+                        aria-checked="false"
+                        aria-label="Toggle dark mode"
+                        title="Toggle between light and dark theme">
+                        <span class="theme-icon-light" aria-hidden="true">☀️</span>
+                        <span class="theme-icon-dark" aria-hidden="true">🌙</span>
+                        <span class="theme-label">Light Mode</span>
+                    </button>
+                    <div class="theme-preference">
+                        <label for="themePreference">Theme Preference:</label>
+                        <select id="themePreference" aria-label="Select theme preference">
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                            <option value="system">System</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-section">
                 <h3>Maintenance Items</h3>
                 <div id="maintenanceSettings">
-                    <!-- Will be populated by JavaScript -->
+                    <!-- Will be populated by JavaScript, includes theme toggle -->
                 </div>
-                <button onclick="addMaintenanceItem()" class="add-item-btn">Add New Item</button>
+                <button class="add-item-btn" data-action="add-maintenance">Add New Item</button>
             </div>
             <div class="settings-section">
                 <h3>Data Management</h3>
-                <button onclick="exportData()" class="export-btn">Export All Data</button>
-                <button onclick="importData()" class="import-btn">Import Data</button>
-                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(event)">
+                <button class="export-btn" data-action="export">Export All Data</button>
+                <button class="import-btn" data-action="import">Import Data</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
             </div>
         </div>
     </div>
@@ -98,7 +157,7 @@
     <!-- Edit Work Modal -->
     <div id="editWorkModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeEditModal()">&times;</span>
+            <span class="close" data-action="close-edit-modal">&times;</span>
             <h2>Edit Work Entry</h2>
             <form id="editWorkForm">
                 <div class="form-group">
@@ -129,8 +188,8 @@
                 </div>
                 <div class="modal-buttons">
                     <button type="submit">Update Work</button>
-                    <button type="button" onclick="deleteWork()" class="delete-btn">Delete</button>
-                    <button type="button" onclick="closeEditModal()" class="cancel-btn">Cancel</button>
+                    <button type="button" class="delete-btn" data-action="delete-work">Delete</button>
+                    <button type="button" class="cancel-btn" data-action="close-edit-modal">Cancel</button>
                 </div>
             </form>
         </div>
@@ -139,7 +198,7 @@
     <!-- Edit Maintenance Item Modal -->
     <div id="editMaintenanceModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeMaintenanceModal()">&times;</span>
+            <span class="close" data-action="close-maintenance-modal">&times;</span>
             <h2>Edit Maintenance Item</h2>
             <form id="editMaintenanceForm">
                 <div class="form-group">
@@ -160,8 +219,8 @@
                 </div>
                 <div class="modal-buttons">
                     <button type="submit">Update Item</button>
-                    <button type="button" onclick="deleteMaintenanceItem()" class="delete-btn">Delete</button>
-                    <button type="button" onclick="closeMaintenanceModal()" class="cancel-btn">Cancel</button>
+                    <button type="button" class="delete-btn" data-action="delete-maintenance">Delete</button>
+                    <button type="button" class="cancel-btn" data-action="close-maintenance-modal">Cancel</button>
                 </div>
             </form>
         </div>
