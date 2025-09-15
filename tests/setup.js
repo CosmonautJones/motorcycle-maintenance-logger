@@ -1,7 +1,7 @@
 // Jest setup file for motorcycle maintenance tracker tests
 
 // Import testing utilities
-import '@testing-library/jest-dom';
+require('@testing-library/jest-dom');
 
 // Import fake IndexedDB for testing
 require('fake-indexeddb/auto');

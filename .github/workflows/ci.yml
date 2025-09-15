@@ -55,8 +55,14 @@ jobs:
     - name: Run integration tests
       run: npm run test:integration
 
+    - name: Run UI addition tests
+      run: npm run test:ui-addition
+
     - name: Generate test coverage
       run: npm run test:coverage
+
+    - name: Validate coverage thresholds for new modules
+      run: npm run test:coverage:validate
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -106,6 +112,7 @@ jobs:
     strategy:
       matrix:
         browser: [chromium, firefox, webkit]
+        feature-flag: ['enabled', 'disabled', 'partial']
 
     steps:
     - name: Checkout code
@@ -123,14 +130,30 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
 
-    - name: Run tests on ${{ matrix.browser }}
-      run: npx playwright test --project=${{ matrix.browser }}
+    - name: Set feature flag environment
+      run: |
+        case "${{ matrix.feature-flag }}" in
+          "enabled")
+            echo "FEATURE_FLAGS={\"ui-addition\":true,\"enhanced-icons\":true,\"simplified-theme-toggle\":true}" >> $GITHUB_ENV
+            ;;
+          "disabled")
+            echo "FEATURE_FLAGS={\"ui-addition\":false}" >> $GITHUB_ENV
+            ;;
+          "partial")
+            echo "FEATURE_FLAGS={\"ui-addition\":true,\"enhanced-icons\":false,\"simplified-theme-toggle\":true}" >> $GITHUB_ENV
+            ;;
+        esac
+
+    - name: Run tests on ${{ matrix.browser }} with ${{ matrix.feature-flag }} flags
+      run: npx playwright test --project=${{ matrix.browser }} --grep="UI Addition|ui-addition"
+      env:
+        FEATURE_FLAG_CONFIG: ${{ env.FEATURE_FLAGS }}
 
     - name: Upload test results
       uses: actions/upload-artifact@v3
       if: always()
       with:
-        name: test-results-${{ matrix.browser }}
+        name: test-results-${{ matrix.browser }}-${{ matrix.feature-flag }}
         path: test-results/
         retention-days: 30
 
@@ -157,8 +180,17 @@ jobs:
         npx playwright install --with-deps
         npm install @axe-core/playwright
 
-    - name: Run accessibility tests
+    - name: Run standard accessibility tests
       run: npx playwright test --grep="accessibility"
+
+    - name: Run UI addition accessibility tests
+      run: npm run test:accessibility:ui-addition
+
+    - name: Test icon accessibility across themes
+      run: npm run test:accessibility:icons
+
+    - name: Test theme toggle accessibility
+      run: npm run test:accessibility:theme-toggle
 
     - name: Upload accessibility report
       uses: actions/upload-artifact@v3
@@ -202,6 +234,10 @@ jobs:
     runs-on: ubuntu-latest
     name: Performance Testing
 
+    strategy:
+      matrix:
+        scenario: ['baseline', 'with-icons', 'feature-disabled']
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -218,19 +254,125 @@ jobs:
     - name: Install Lighthouse CI
       run: npm install -g @lhci/cli@0.12.x
 
-    - name: Run Lighthouse CI
+    - name: Configure performance scenario
+      run: |
+        case "${{ matrix.scenario }}" in
+          "baseline")
+            echo "LIGHTHOUSE_CONFIG=baseline" >> $GITHUB_ENV
+            ;;
+          "with-icons")
+            echo "LIGHTHOUSE_CONFIG=ui-addition-enabled" >> $GITHUB_ENV
+            echo "FEATURE_FLAGS={\"ui-addition\":true,\"enhanced-icons\":true}" >> $GITHUB_ENV
+            ;;
+          "feature-disabled")
+            echo "LIGHTHOUSE_CONFIG=ui-addition-disabled" >> $GITHUB_ENV
+            echo "FEATURE_FLAGS={\"ui-addition\":false}" >> $GITHUB_ENV
+            ;;
+        esac
+
+    - name: Run icon loading performance tests
+      run: npm run test:performance:icons
+      env:
+        FEATURE_FLAG_CONFIG: ${{ env.FEATURE_FLAGS }}
+
+    - name: Run Lighthouse CI for ${{ matrix.scenario }}
       run: |
         npm run dev &
         sleep 10
-        lhci autorun --upload.target=temporary-public-storage
+        lhci autorun --config=lighthouserc-${{ matrix.scenario }}.js --upload.target=temporary-public-storage
       env:
         LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        FEATURE_FLAG_CONFIG: ${{ env.FEATURE_FLAGS }}
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: lighthouse-results-${{ matrix.scenario }}
+        path: .lighthouseci/
+        retention-days: 30
+
+  # Visual Regression Testing
+  visual-regression:
+    runs-on: ubuntu-latest
+    name: Visual Regression Testing
+    needs: [test]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+
+    - name: Run visual regression tests
+      run: npm run test:visual-regression
+
+    - name: Upload visual diff artifacts
+      uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: visual-regression-diffs
+        path: test-results/visual-regression/
+        retention-days: 30
+
+  # Feature Flag Testing
+  feature-flags:
+    runs-on: ubuntu-latest
+    name: Feature Flag Testing
+    needs: [test]
+
+    strategy:
+      matrix:
+        environment: ['development', 'staging', 'production']
+        flag-combination: ['all-enabled', 'all-disabled', 'icons-only', 'theme-only', 'mixed']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+
+    - name: Configure feature flags for ${{ matrix.environment }}
+      run: npm run test:feature-flags:configure -- --env=${{ matrix.environment }} --flags=${{ matrix.flag-combination }}
+
+    - name: Run feature flag tests
+      run: npm run test:feature-flags -- --env=${{ matrix.environment }} --flags=${{ matrix.flag-combination }}
+
+    - name: Upload feature flag test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: feature-flag-results-${{ matrix.environment }}-${{ matrix.flag-combination }}
+        path: test-results/feature-flags/
+        retention-days: 30
 
   # Deployment (on main branch only)
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to Production
-    needs: [lint, test, e2e, cross-browser, accessibility, security]
+    needs: [lint, test, e2e, cross-browser, accessibility, security, visual-regression, feature-flags]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
@@ -260,7 +402,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     name: Notify Results
-    needs: [lint, test, e2e, cross-browser, accessibility, security, performance]
+    needs: [lint, test, e2e, cross-browser, accessibility, security, performance, visual-regression, feature-flags]
     if: always()
 
     steps:
