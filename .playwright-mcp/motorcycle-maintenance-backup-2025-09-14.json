@@ -1,0 +1,98 @@
+{
+  "currentMileage": 25000,
+  "workHistory": [
+    {
+      "date": "2025-09-14",
+      "mileage": 24750,
+      "type": "oil-change",
+      "description": "Changed engine oil and oil filter. Used Castrol GTX 10W-40 and OEM filter. Also checked air filter - still clean.",
+      "timestamp": "2025-09-14T05:54:19.479Z",
+      "lastModified": "2025-09-14T05:54:59.927Z",
+      "modifiedBy": "user",
+      "id": 1
+    }
+  ],
+  "maintenanceSchedule": [
+    {
+      "id": "air-filter",
+      "name": "Air Filter",
+      "intervalMiles": 15000,
+      "intervalMonths": null,
+      "description": "Replace air filter element",
+      "isCustom": false,
+      "created": "2025-09-14T05:53:20.039Z",
+      "lastModified": "2025-09-14T05:53:20.039Z"
+    },
+    {
+      "id": "brake-fluid",
+      "name": "Brake Fluid",
+      "intervalMiles": null,
+      "intervalMonths": 24,
+      "description": "Replace brake fluid and inspect brake lines",
+      "isCustom": false,
+      "created": "2025-09-14T05:53:20.040Z",
+      "lastModified": "2025-09-14T05:53:20.040Z"
+    },
+    {
+      "id": "custom-1757829350513",
+      "name": "Chain Lubrication",
+      "description": "Clean and lubricate drive chain",
+      "intervalMiles": 500,
+      "intervalMonths": null,
+      "isCustom": true,
+      "created": "2025-09-14T05:55:50.513Z",
+      "lastModified": "2025-09-14T05:55:50.513Z"
+    },
+    {
+      "id": "coolant",
+      "name": "Coolant",
+      "intervalMiles": null,
+      "intervalMonths": 24,
+      "description": "Replace engine coolant",
+      "isCustom": false,
+      "created": "2025-09-14T05:53:20.041Z",
+      "lastModified": "2025-09-14T05:53:20.041Z"
+    },
+    {
+      "id": "final-drive",
+      "name": "Final Drive Oil",
+      "intervalMiles": null,
+      "intervalMonths": 24,
+      "description": "Change final drive gear oil",
+      "isCustom": false,
+      "created": "2025-09-14T05:53:20.042Z",
+      "lastModified": "2025-09-14T05:53:20.042Z"
+    },
+    {
+      "id": "oil-change",
+      "name": "Oil & Filter Change",
+      "intervalMiles": 3500,
+      "intervalMonths": null,
+      "description": "Change engine oil and oil filter",
+      "isCustom": false,
+      "created": "2025-09-14T05:53:20.035Z",
+      "lastModified": "2025-09-14T05:53:20.035Z"
+    },
+    {
+      "id": "spark-plugs",
+      "name": "Spark Plugs",
+      "intervalMiles": 7500,
+      "intervalMonths": null,
+      "description": "Replace spark plugs (NGK DPR7EA-9)",
+      "isCustom": false,
+      "created": "2025-09-14T05:53:20.038Z",
+      "lastModified": "2025-09-14T05:53:20.038Z"
+    },
+    {
+      "id": "valve-adjustment",
+      "name": "Valve Adjustment",
+      "intervalMiles": 7500,
+      "intervalMonths": null,
+      "description": "Check and adjust valve clearance",
+      "isCustom": false,
+      "created": "2025-09-14T05:53:20.039Z",
+      "lastModified": "2025-09-14T05:53:20.039Z"
+    }
+  ],
+  "exportDate": "2025-09-14T05:56:05.828Z"
+}
