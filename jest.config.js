@@ -1,6 +1,6 @@
 module.exports = {
   // Test environment
-  testEnvironment: 'jsdom',
+  testEnvironment: 'jest-environment-jsdom',
 
   // Setup files
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
@@ -14,9 +14,16 @@ module.exports = {
   // Coverage configuration
   collectCoverageFrom: [
     'script.js',
+    'src/**/*.js',
+    // Ensure UI addition modules are included
+    'src/IconManager.js',
+    'src/SimplifiedThemeManager.js',
+    'src/FeatureFlags.js',
     '!node_modules/**',
     '!tests/**',
-    '!coverage/**'
+    '!coverage/**',
+    '!src/**/*.test.js',
+    '!src/**/*.spec.js'
   ],
 
   // Coverage thresholds
@@ -26,6 +33,25 @@ module.exports = {
       functions: 80,
       lines: 80,
       statements: 80
+    },
+    // Specific thresholds for UI addition modules
+    './src/IconManager.js': {
+      branches: 85,
+      functions: 85,
+      lines: 85,
+      statements: 85
+    },
+    './src/SimplifiedThemeManager.js': {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    },
+    './src/FeatureFlags.js': {
+      branches: 90,
+      functions: 90,
+      lines: 90,
+      statements: 90
     }
   },
 

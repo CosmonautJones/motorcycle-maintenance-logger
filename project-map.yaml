@@ -1,0 +1,190 @@
+# Project Map for Motorcycle Maintenance Tracker
+# Generated: 2025-09-14
+
+project:
+  name: "motorcycle-maintenance-tracker"
+  description: "Web-based motorcycle maintenance tracker for 2001 Suzuki Intruder Volusia 800"
+  version: "1.0.0"
+  type: "static-web-app"
+
+languages:
+  primary:
+    - javascript: "ES2021+ vanilla JavaScript with modern features"
+    - html5: "Semantic HTML with accessibility features"
+    - css3: "CSS Grid/Flexbox with CSS custom properties"
+  secondary:
+    - yaml: "Configuration files"
+    - json: "Package configuration and data"
+    - markdown: "Documentation"
+
+frameworks:
+  frontend:
+    - vanilla-js: "No framework - pure JavaScript classes"
+    - web-apis: "LocalStorage, IndexedDB via Dexie.js"
+  external-dependencies:
+    - dexie: "3.2.4 - IndexedDB wrapper (CDN with SRI)"
+    - google-fonts: "Inter font family"
+
+modules:
+  core:
+    - name: "MotorcycleTracker"
+      path: "script.js"
+      type: "main-controller"
+      description: "Main application logic and state management"
+      lines: 1088
+      test_strategy: "tdd"
+
+    - name: "ThemeManager"
+      path: "script.js"
+      type: "ui-component"
+      description: "Theme switching and system preference detection"
+      lines: ~200
+      test_strategy: "tdd"
+
+    - name: "UI Components"
+      path: "index.html"
+      type: "presentation"
+      description: "Tabbed interface with dashboard, history, and add work"
+      lines: 230
+      test_strategy: "characterize"
+
+    - name: "Styling System"
+      path: "style.css"
+      type: "presentation"
+      description: "Responsive design with CSS Grid/Flexbox and theming"
+      lines: 1561
+      test_strategy: "characterize"
+
+build:
+  bundler: "none"
+  transpiler: "none"
+  package_manager: "npm"
+  node_version: ">=18.0.0"
+  scripts:
+    dev: "python -m http.server 8000"
+    build: "echo 'Static site - no build needed'"
+    start: "python -m http.server 8000"
+
+test:
+  frameworks:
+    unit: "jest"
+    integration: "jest + @testing-library/dom"
+    e2e: "playwright"
+    linting: "eslint"
+
+  environments:
+    unit: "jsdom"
+    integration: "jsdom + fake-indexeddb + msw"
+    e2e: "chromium/firefox/webkit browsers"
+
+  coverage:
+    tool: "jest"
+    threshold: 80
+    targets: ["script.js"]
+    reporters: ["text", "html", "lcov"]
+
+  structure:
+    - "tests/unit/*.test.js (2 files, ~1316 lines)"
+    - "tests/integration/*.test.js (1 file, ~598 lines)"
+    - "tests/e2e/*.spec.js (1 file, ~444 lines)"
+    - "tests/setup.js (249 lines test utilities)"
+
+entrypoints:
+  web:
+    - name: "Main Application"
+      path: "index.html"
+      type: "spa"
+      description: "Single-page motorcycle maintenance tracker"
+      port: 8000
+
+  api:
+    - name: "LocalStorage API"
+      type: "browser-storage"
+      description: "Persists current mileage and work history"
+
+    - name: "IndexedDB API"
+      type: "browser-database"
+      description: "Future database expansion capability via Dexie"
+
+risks:
+  network:
+    level: "low"
+    notes:
+      - "CDN dependency on unpkg.com for Dexie.js (mitigated with SRI)"
+      - "Google Fonts CDN dependency (performance optimization)"
+
+  database:
+    level: "minimal"
+    notes:
+      - "Client-side only - LocalStorage for persistence"
+      - "No server-side database or sensitive data"
+
+  filesystem:
+    level: "none"
+    notes:
+      - "Static web application - no filesystem access"
+
+  security:
+    level: "low"
+    notes:
+      - "CSP implemented with restrictive policies"
+      - "SRI hashes for external scripts"
+      - "No user authentication or sensitive data handling"
+      - "Security audit completed and issues resolved"
+
+ci_cd:
+  platform: "github-actions"
+  workflows:
+    - name: "CI/CD Pipeline"
+      file: ".github/workflows/ci.yml"
+      triggers: ["push", "pull_request"]
+      jobs:
+        - "lint (ESLint + security audit)"
+        - "test (unit + integration + coverage)"
+        - "e2e (Playwright cross-browser)"
+        - "accessibility (axe-core testing)"
+        - "security (npm audit + Snyk)"
+        - "performance (Lighthouse CI)"
+        - "deploy (GitHub Pages on main branch)"
+
+deployment:
+  target: "github-pages"
+  type: "static-site"
+  excludes: ["node_modules", "tests", ".github"]
+
+documentation:
+  setup: "README.md"
+  project_guide: "CLAUDE.md"
+  testing: "TESTING.md"
+  security: "SECURITY_AUDIT_REPORT.md"
+
+maintenance_features:
+  schedule:
+    - "Oil & Filter: Every 3,500 miles"
+    - "Spark Plugs: Every 7,500 miles"
+    - "Valve Adjustment: Every 7,500 miles"
+    - "Air Filter: Every 15,000 miles"
+    - "Brake/Coolant/Final Drive: Every 2 years"
+
+  ui_features:
+    - "Dashboard with status indicators"
+    - "Work history tracking"
+    - "Add maintenance work form"
+    - "Theme switching (light/dark/system)"
+    - "Responsive mobile-first design"
+    - "Accessibility compliance (WCAG 2.1 AA)"
+
+coverage_status:
+  current: "comprehensive"
+  unit_tests: "extensive (MotorcycleTracker, ThemeManager classes)"
+  integration_tests: "user workflows and component interactions"
+  e2e_tests: "complete user journeys across all features"
+  accessibility_tests: "WCAG 2.1 compliance testing"
+  performance_tests: "Lighthouse CI integration"
+  security_tests: "dependency scanning and audit"
+
+recommended_test_strategy:
+  new_features: "tdd"
+  existing_refactor: "characterize"
+  ui_changes: "characterize + accessibility"
+  data_layer: "tdd"

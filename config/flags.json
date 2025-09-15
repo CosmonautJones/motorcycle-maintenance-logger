@@ -1,0 +1,32 @@
+{
+  "ui-addition": {
+    "enabled": false,
+    "description": "Enable enhanced UI features including icons and simplified theme manager",
+    "environments": {
+      "development": true,
+      "staging": true,
+      "production": false
+    },
+    "rollout_percentage": 0
+  },
+  "enhanced-icons": {
+    "enabled": true,
+    "description": "SVG icon system with accessibility features",
+    "parent_flag": "ui-addition",
+    "environments": {
+      "development": true,
+      "staging": true,
+      "production": false
+    }
+  },
+  "simplified-theme": {
+    "enabled": true,
+    "description": "Simplified theme manager with light/dark only",
+    "parent_flag": "ui-addition",
+    "environments": {
+      "development": true,
+      "staging": true,
+      "production": false
+    }
+  }
+}
